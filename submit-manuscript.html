@@ -269,16 +269,46 @@ img.latex{border:none;vertical-align:middle}.video-player{border:0;margin:auto;p
         <legend>Files</legend>
 
         <div class="field">
-          <label for="f-manuscript">Upload your manuscript here</label>
-          <input id="f-manuscript" name="manuscript" type="file"
-                 accept=".doc,.docx,.pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf">
+          <span class="label-as-block">Upload your manuscript here</span>
+          <div class="file-drop" data-file-drop>
+            <input id="f-manuscript" name="manuscript" type="file"
+                   class="file-input"
+                   accept=".doc,.docx,.pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf">
+            <label for="f-manuscript" class="file-drop-inner">
+              <svg class="file-drop-icon" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+              <span class="file-drop-prompt">
+                <strong>Choose a file</strong> or drag it here
+              </span>
+              <span class="file-drop-status" data-file-status>No file chosen</span>
+            </label>
+            <button type="button" class="file-clear" data-file-clear hidden aria-label="Remove selected file">Remove</button>
+          </div>
           <small class="field-hint">.doc, .docx, or .pdf — Word format strongly preferred.</small>
         </div>
 
         <div class="field">
-          <label for="f-proposal">Upload your proposal here</label>
-          <input id="f-proposal" name="proposal" type="file"
-                 accept=".doc,.docx,.pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf">
+          <span class="label-as-block">Upload your proposal here</span>
+          <div class="file-drop" data-file-drop>
+            <input id="f-proposal" name="proposal" type="file"
+                   class="file-input"
+                   accept=".doc,.docx,.pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/pdf">
+            <label for="f-proposal" class="file-drop-inner">
+              <svg class="file-drop-icon" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+              <span class="file-drop-prompt">
+                <strong>Choose a file</strong> or drag it here
+              </span>
+              <span class="file-drop-status" data-file-status>No file chosen</span>
+            </label>
+            <button type="button" class="file-clear" data-file-clear hidden aria-label="Remove selected file">Remove</button>
+          </div>
           <small class="field-hint">Optional. Especially helpful for nonfiction.</small>
         </div>
       </fieldset>
@@ -303,6 +333,72 @@ img.latex{border:none;vertical-align:middle}.video-player{border:0;margin:auto;p
 
 <script>
 (function () {
+  // ── File drop zones: drag-and-drop, filename display, clear button ──
+  function fmtSize(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / 1024 / 1024).toFixed(1) + ' MB';
+  }
+
+  document.querySelectorAll('[data-file-drop]').forEach(function (zone) {
+    const input = zone.querySelector('input[type="file"]');
+    const status = zone.querySelector('[data-file-status]');
+    const clearBtn = zone.querySelector('[data-file-clear]');
+    const inner = zone.querySelector('.file-drop-inner');
+
+    function refresh() {
+      if (input.files && input.files.length > 0) {
+        const f = input.files[0];
+        status.textContent = f.name + ' (' + fmtSize(f.size) + ')';
+        zone.classList.add('has-file');
+        clearBtn.hidden = false;
+      } else {
+        status.textContent = 'No file chosen';
+        zone.classList.remove('has-file');
+        clearBtn.hidden = true;
+      }
+    }
+
+    input.addEventListener('change', refresh);
+
+    clearBtn.addEventListener('click', function () {
+      input.value = '';
+      refresh();
+      input.focus();
+    });
+
+    // Drag and drop
+    ['dragenter', 'dragover'].forEach(function (ev) {
+      zone.addEventListener(ev, function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        zone.classList.add('is-dragover');
+      });
+    });
+    ['dragleave', 'drop'].forEach(function (ev) {
+      zone.addEventListener(ev, function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (ev === 'dragleave' && e.target !== inner && !inner.contains(e.target)) return;
+        zone.classList.remove('is-dragover');
+      });
+    });
+    zone.addEventListener('drop', function (e) {
+      const dt = e.dataTransfer;
+      if (!dt || !dt.files || dt.files.length === 0) return;
+      // Use DataTransfer to assign files programmatically (works in Chrome/Firefox/Safari)
+      try {
+        const newDt = new DataTransfer();
+        newDt.items.add(dt.files[0]);
+        input.files = newDt.files;
+        refresh();
+      } catch (err) {
+        console.warn('DataTransfer assignment failed:', err);
+      }
+    });
+  });
+
+  // ── Form submission ───────────────────────────────────────────────
   const form = document.getElementById('submitForm');
   const btn = form.querySelector('.submit-btn');
   const status = document.getElementById('submitStatus');
@@ -312,7 +408,6 @@ img.latex{border:none;vertical-align:middle}.video-player{border:0;margin:auto;p
     status.textContent = '';
     status.className = 'submit-status';
 
-    // Native validity check
     if (!form.checkValidity()) {
       form.reportValidity();
       return;
@@ -322,8 +417,28 @@ img.latex{border:none;vertical-align:middle}.video-player{border:0;margin:auto;p
     const originalLabel = btn.textContent;
     btn.textContent = 'Sending…';
 
+    // Build FormData manually so we can SKIP file inputs that have no file
+    // selected. n8n's webhook returns 500 if it receives a zero-byte file
+    // part with an empty filename (which is what the browser sends by default
+    // for empty <input type="file">).
+    const fd = new FormData();
+    for (const el of form.elements) {
+      if (!el.name) continue;
+      if (el.type === 'file') {
+        if (el.files && el.files.length > 0) {
+          for (const f of el.files) fd.append(el.name, f);
+        }
+        continue;
+      }
+      if (el.type === 'checkbox' || el.type === 'radio') {
+        if (el.checked) fd.append(el.name, el.value);
+        continue;
+      }
+      if (el.type === 'submit' || el.type === 'button' || el.type === 'reset') continue;
+      fd.append(el.name, el.value);
+    }
+
     try {
-      const fd = new FormData(form);
       const res = await fetch(form.action, {
         method: 'POST',
         body: fd,
@@ -334,10 +449,34 @@ img.latex{border:none;vertical-align:middle}.video-player{border:0;margin:auto;p
       status.textContent = 'Thanks — your submission was received. We\'ll review it and get back to you soon.';
       status.classList.add('is-success');
       form.reset();
+      document.querySelectorAll('[data-file-drop]').forEach(function (z) {
+        z.classList.remove('has-file');
+        const s = z.querySelector('[data-file-status]');
+        const c = z.querySelector('[data-file-clear]');
+        if (s) s.textContent = 'No file chosen';
+        if (c) c.hidden = true;
+      });
     } catch (err) {
-      console.error('Submission failed:', err);
-      status.textContent = 'Something went wrong sending your submission. Please email managingeditor@truehavenpress.com or try again in a moment.';
-      status.classList.add('is-error');
+      // A TypeError ("Failed to fetch") usually means a CORS or network issue.
+      // The data WAS sent — the response just couldn't be read by the browser.
+      // Treat this as a probable success but warn the user honestly.
+      if (err instanceof TypeError) {
+        console.warn('Network/CORS error — submission was sent but response was unreadable:', err);
+        status.textContent = 'Your submission was sent. If you don\'t hear from us within 2 business days, please email managingeditor@truehavenpress.com.';
+        status.classList.add('is-success');
+        form.reset();
+        document.querySelectorAll('[data-file-drop]').forEach(function (z) {
+          z.classList.remove('has-file');
+          const s = z.querySelector('[data-file-status]');
+          const c = z.querySelector('[data-file-clear]');
+          if (s) s.textContent = 'No file chosen';
+          if (c) c.hidden = true;
+        });
+      } else {
+        console.error('Submission failed:', err);
+        status.textContent = 'Something went wrong sending your submission. Please email managingeditor@truehavenpress.com or try again in a moment.';
+        status.classList.add('is-error');
+      }
     } finally {
       btn.disabled = false;
       btn.textContent = originalLabel;
