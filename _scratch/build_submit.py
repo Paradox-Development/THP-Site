@@ -113,16 +113,16 @@ main_html = f'''
           <span class="label-as-block">Editing Types Needed?</span>
           <div class="checkbox-group">
             <label class="checkbox-row">
+              <input type="checkbox" name="editingTypes" value="Developmental Editing"> Developmental Editing
+            </label>
+            <label class="checkbox-row">
+              <input type="checkbox" name="editingTypes" value="Line Editing"> Line Editing
+            </label>
+            <label class="checkbox-row">
+              <input type="checkbox" name="editingTypes" value="Proofreading"> Proofreading
+            </label>
+            <label class="checkbox-row">
               <input type="checkbox" name="editingTypes" value="Uncertain"> Uncertain
-            </label>
-            <label class="checkbox-row">
-              <input type="checkbox" name="editingTypes" value="Editing Platinum Package"> Editing Platinum Package
-            </label>
-            <label class="checkbox-row">
-              <input type="checkbox" name="editingTypes" value="Editing Gold Package"> Editing Gold Package
-            </label>
-            <label class="checkbox-row">
-              <input type="checkbox" name="editingTypes" value="Proofreading ONLY"> Proofreading ONLY
             </label>
           </div>
         </div>
