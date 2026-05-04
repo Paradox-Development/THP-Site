@@ -175,6 +175,11 @@ img.latex{border:none;vertical-align:middle}.video-player{border:0;margin:auto;p
           enctype="multipart/form-data"
           novalidate>
 
+      <div aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;" tabindex="-1">
+        <label for="website_url">Website URL (leave blank)</label>
+        <input type="text" id="website_url" name="website_url" tabindex="-1" autocomplete="off" value="">
+      </div>
+
       <p class="submit-intro">
         Required fields are marked with <span class="req-mark" aria-hidden="true">*</span>.
         Plan on a few minutes; you can attach your manuscript and proposal at the bottom.
@@ -408,6 +413,22 @@ img.latex{border:none;vertical-align:middle}.video-player{border:0;margin:auto;p
     status.textContent = '';
     status.className = 'submit-status';
 
+    // Honeypot — silently drop bot submissions with the real success UI.
+    const honeypot = form.elements['website_url'];
+    if (honeypot && honeypot.value) {
+      status.textContent = 'Thanks — your submission was received. We\'ll review it and get back to you soon.';
+      status.classList.add('is-success');
+      form.reset();
+      document.querySelectorAll('[data-file-drop]').forEach(function (z) {
+        z.classList.remove('has-file');
+        const s = z.querySelector('[data-file-status]');
+        const c = z.querySelector('[data-file-clear]');
+        if (s) s.textContent = 'No file chosen';
+        if (c) c.hidden = true;
+      });
+      return;
+    }
+
     if (!form.checkValidity()) {
       form.reportValidity();
       return;
@@ -424,6 +445,7 @@ img.latex{border:none;vertical-align:middle}.video-player{border:0;margin:auto;p
     const fd = new FormData();
     for (const el of form.elements) {
       if (!el.name) continue;
+      if (el.name === 'website_url') continue;
       if (el.type === 'file') {
         if (el.files && el.files.length > 0) {
           for (const f of el.files) fd.append(el.name, f);
